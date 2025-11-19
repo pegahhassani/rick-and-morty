@@ -1,7 +1,52 @@
 import { ArrowUpCircleIcon } from "@heroicons/react/24/outline";
-import { character, episodes } from "../../data/data";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import Loader from "./Loader";
 
-function CharacterDetails() {
+function CharacterDetails({ selectId, onAddFavorites, isAddToFaves }) {
+  const [character, setCharacter] = useState(null);
+  const [loading, setIsLoading] = useState(false);
+  const [episodes, setEpisode] = useState([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        const { data } = await axios.get(
+          `https://rickandmortyapi.com/api/character/${selectId}`
+        );
+        setCharacter(data);
+
+        const episodesId = data.episode.map((e) => e.split("/").at(-1));
+        const { data: episodeData } = await axios.get(
+          `https://rickandmortyapi.com/api/episode/${episodesId}`
+        );
+        setEpisode([episodeData].flat());
+      } catch (error) {
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (selectId) fetchData();
+  }, [selectId]);
+
+  if (loading) {
+    return (
+      <div style={{ flex: 1 }}>
+        <Loader />
+      </div>
+    );
+  }
+
+  if (!character || !selectId) {
+    return (
+      <div style={{ flex: 1, color: "var(--slate-300)" }}>
+        Please select a character
+      </div>
+    );
+  }
+
   return (
     <div style={{ flex: 1 }}>
       <div className="character-detail">
@@ -28,7 +73,15 @@ function CharacterDetails() {
             <p>{character.location.name}</p>
           </div>
           <div className="actions">
-            <button className="btn btn--primary">Add to favorites</button>
+            {isAddToFaves ? (
+              <p>Already added to favorites</p>
+            ) : (
+              <button
+                className="btn btn--primary"
+                onClick={() => onAddFavorites(character)}>
+                Add to favorites
+              </button>
+            )}
           </div>
         </div>
       </div>
